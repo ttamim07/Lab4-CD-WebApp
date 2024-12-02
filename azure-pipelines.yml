@@ -4,44 +4,31 @@ trigger:
 pool:
   name: Lab4-Self-Hosted
 
-variables:
-  system.debug: true  # Enable detailed logs for troubleshooting
-
 steps:
-  # Step 1: Install .NET SDK
   - task: UseDotNet@2
     inputs:
       packageType: 'sdk'
-      version: '8.x'
+      version: '8.x'  # Replace with your .NET version
 
-  # Step 2: Restore NuGet Packages
   - task: DotNetCoreCLI@2
     inputs:
       command: 'restore'
       projects: '**/*.csproj'
 
-  # Step 3: Build the Project
   - task: DotNetCoreCLI@2
     inputs:
       command: 'build'
       projects: '**/*.csproj'
       arguments: '--configuration Release'
 
-  # Step 4: Publish the Project
   - task: DotNetCoreCLI@2
     inputs:
       command: 'publish'
       projects: '**/*.csproj'
       arguments: '--configuration Release --output $(Build.ArtifactStagingDirectory)'
 
-  # Step 5: Debug Directory Contents
-  - script: |
-      echo "Contents of Build.ArtifactStagingDirectory:"
-      ls -la $(Build.ArtifactStagingDirectory)
-    displayName: "Debug: Check Artifact Directory Contents"
-
-  # Step 6: Publish Pipeline Artifact
   - task: PublishPipelineArtifact@1
     inputs:
       targetPath: '$(Build.ArtifactStagingDirectory)'
       artifact: 'drop'
+
