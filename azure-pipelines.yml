@@ -1,15 +1,18 @@
 trigger:
-  - main  # Trigger pipeline on changes to the 'main' branch
+  - main
 
 pool:
-  name: Lab4-Self-Hosted  # Specify your self-hosted agent pool
+  name: Lab4-Self-Hosted
+
+variables:
+  system.debug: true  # Enable detailed logs for troubleshooting
 
 steps:
-  # Step 1: Use the .NET SDK
+  # Step 1: Install .NET SDK
   - task: UseDotNet@2
     inputs:
       packageType: 'sdk'
-      version: '8.x'  # Ensure you're using .NET 8.x as required
+      version: '8.x'
 
   # Step 2: Restore NuGet Packages
   - task: DotNetCoreCLI@2
@@ -24,29 +27,29 @@ steps:
       projects: '**/*.csproj'
       arguments: '--configuration Release'
 
-  # Step 4: Publish the Project into an Artifact
+  # Step 4: Publish the Project
   - task: DotNetCoreCLI@2
     inputs:
       command: 'publish'
       projects: '**/*.csproj'
       arguments: '--configuration Release --output $(Build.ArtifactStagingDirectory)'
 
-  # Step 5: Publish the Artifact for Deployment
+  # Step 5: Push the Published Artifacts to a Pipeline Artifact
   - task: PublishPipelineArtifact@1
     inputs:
       targetPath: '$(Build.ArtifactStagingDirectory)'
       artifact: 'drop'
 
-  # Step 6: Deploy to Remote Machine using SSH
+  # Step 6: Deploy via SSH
   - task: SSH@0
     inputs:
-      sshEndpoint: 'MySSHConnection'  # Name of your SSH service connection
+      sshEndpoint: 'MySSHConnection'  # Ensure the service connection is correct
       runOptions: 'inline'
       inline: |
-        # Define the target directory
-        mkdir -p /home/MySSHConnection/deployments/Lab4-CD-WebApp
-        # Copy files to the target directory
-        scp -r $(Pipeline.Workspace)/drop/* /home/MySSHConnection/deployments/Lab4-CD-WebApp
-        # Verify deployment (optional)
+        echo "Starting deployment to remote machine..."
+        mkdir -p /home/MySSHConnection/deployments/Lab4-CD-WebApp || { echo "Failed to create directory"; exit 1; }
+        echo "Directory created successfully."
+        scp -r $(Pipeline.Workspace)/drop/* /home/MySSHConnection/deployments/Lab4-CD-WebApp || { echo "File transfer failed"; exit 1; }
+        echo "Files transferred successfully."
         ls -la /home/MySSHConnection/deployments/Lab4-CD-WebApp
       failOnStderr: true
