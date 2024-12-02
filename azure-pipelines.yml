@@ -34,22 +34,14 @@ steps:
       projects: '**/*.csproj'
       arguments: '--configuration Release --output $(Build.ArtifactStagingDirectory)'
 
-  # Step 5: Push the Published Artifacts to a Pipeline Artifact
+  # Step 5: Debug Directory Contents
+  - script: |
+      echo "Contents of Build.ArtifactStagingDirectory:"
+      ls -la $(Build.ArtifactStagingDirectory)
+    displayName: "Debug: Check Artifact Directory Contents"
+
+  # Step 6: Publish Pipeline Artifact
   - task: PublishPipelineArtifact@1
     inputs:
       targetPath: '$(Build.ArtifactStagingDirectory)'
       artifact: 'drop'
-
-  # Step 6: Deploy via SSH
-  - task: SSH@0
-    inputs:
-      sshEndpoint: 'MySSHConnection'  # Ensure the service connection is correct
-      runOptions: 'inline'
-      inline: |
-        echo "Starting deployment to remote machine..."
-        mkdir -p /home/MySSHConnection/deployments/Lab4-CD-WebApp || { echo "Failed to create directory"; exit 1; }
-        echo "Directory created successfully."
-        scp -r $(Pipeline.Workspace)/drop/* /home/MySSHConnection/deployments/Lab4-CD-WebApp || { echo "File transfer failed"; exit 1; }
-        echo "Files transferred successfully."
-        ls -la /home/MySSHConnection/deployments/Lab4-CD-WebApp
-      failOnStderr: true
